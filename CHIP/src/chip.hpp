@@ -8,12 +8,18 @@ constexpr int MEMORY_SHIFT = 0x200;
 class Chip
 {
 public:
+	//is CHIP-8 initialized and running.
+	bool isRunning;
+	//something changed.
+	bool shouldDraw;
+
 	void initialize()
 	{
 		opcode = 0;
 		I = 0;
 		sp = 0;
 		PC = 0x200;
+		isRunning = true;
 	}
 
 	//load game in binary format
@@ -30,7 +36,11 @@ public:
 		
 	}
 
-	bool shouldDraw;
+	void terminate()
+	{
+		isRunning = false;
+	}
+
 
 private:
 	//each opcode is a 2 byte long. This is a current opcode.
@@ -46,9 +56,9 @@ private:
 	//graphics has a total of 64x32 pixels on a screen.
 	unsigned char gfx[64 * 32];
 	//timer will count down to zero when set above. Used by events.
-	unsigned char delay_timer;
+	unsigned char delayTimer;
 	//same as previous. Used by sounds. Will beep while not a zero.
-	unsigned char sound_timer;
+	unsigned char soundTimer;
 	//stack which stores return addresses while calling subroutines.
 	unsigned short stack[16];
 	//current stack pointer;

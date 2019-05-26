@@ -8,50 +8,90 @@
 class Window
 {
 public:
+	//is window able to render
+	static bool isRunning;
+
 	void init()
 	{
+
+		// --------------- GLFW --------------- 
 		glfwSetErrorCallback(errorCallback);
 
 		if (glfwInit() == GL_FALSE) {
-			std::cerr << "GLFW setup failed!" << std::endl;
+			std::cerr << "[GLFW]: Setup failed!" << std::endl;
+			return;
 		}
 
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-		m_window = glfwCreateWindow(640, 480, "CHIP-8", NULL, NULL);
-		if (m_window == nullptr) {
-			std::cerr << "GLFW Window creation failed!" << std::endl;
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+		m_Window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "CHIP-8", NULL, NULL);
+		if (m_Window == NULL) {
+			std::cerr << "[GLFW]: Window creation failed!" << std::endl;
+			return;
 		}
 
-		glfwMakeContextCurrent(m_window);
-		gladLoadGL();
+		glfwMakeContextCurrent(m_Window);
 
-		glfwSetWindowCloseCallback(m_window, closeWindowCallback);
-		glfwSetKeyCallback(m_window, keyCallback);
+		glfwSetWindowCloseCallback(m_Window, closeWindowCallback);
+		glfwSetKeyCallback(m_Window, keyCallback);
+
+		// --------------- GLAD --------------- 
+
+		if (gladLoadGLLoader((GLADloadproc)glfwGetProcAddress) == NULL) {
+			std::cerr << "[GLAD]: Setup failed!" << std::endl;
+			return;
+		}
+
+		std::cout << "OpenGL Info:\n";
+		std::cout << "   Vendor: " << glGetString(GL_VENDOR) << "\n";
+		std::cout << "   Renderer: " << glGetString(GL_RENDERER) << "\n";
+		std::cout << "   Version: " << glGetString(GL_VERSION) << "\n";
+
+		// --------------- OpenGL -------------
+
+		glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+		glfwSetFramebufferSizeCallback(m_Window, windowSizeCallback);
+
+		isRunning = true;
 	}
 
 	void run()
 	{
+		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
 
+
+
+		glfwSwapBuffers(m_Window);
+		glfwPollEvents();
 	}
 
 	void terminate()
 	{
-		glfwDestroyWindow(m_window);
+		isRunning = false;
 		glfwTerminate();
 	}
 
 private:
-	GLFWwindow* m_window;
+	GLFWwindow* m_Window;
+	const int WINDOW_WIDTH = 640;
+	const int WINDOW_HEIGHT = 480;
 
 	static void errorCallback(int error, const char* description)
 	{
 		std::cerr << "[" << error << "] " << description << std::endl;
 	}
 
+	static void windowSizeCallback(GLFWwindow *window, int width, int height)
+	{
+		glViewport(0, 0, width, height);
+	}
+
 	static void closeWindowCallback(GLFWwindow* window)
 	{
-		glfwDestroyWindow(window);
+		isRunning = false;
 		glfwTerminate();
 	}
 
@@ -61,3 +101,5 @@ private:
 			glfwSetWindowShouldClose(window, GLFW_TRUE);
 	}
 };
+
+bool Window::isRunning = false;
