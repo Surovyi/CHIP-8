@@ -19,6 +19,8 @@ public:
 			std::cout << "[ROM FOUND]: " << p.path() << '\n';
 		}
 		m_romsCount = m_roms.size();
+
+		std::cout << "\n[ROMS COUNT]: " << m_romsCount << " roms found!" << std::endl;
 	}
 
 	std::vector<std::string> GetRomsList()

@@ -19,17 +19,25 @@ int main()
 	roms.Initialize();
 
 	
-	std::cout << "\n[ROMS COUNT]: " << roms.GetRomsCount() << " roms found!" << std::endl;
+	
 	
 
-	//CHIP8.loadGame(gameStr);
+	CHIP8.loadGame(roms.GetRomData(2));
 
 
 	std::cout << "[EMULATOR SIZE]: " << sizeof(CHIP8) << " bytes" << std::endl;
+	CHIP8.step();
 
 	while (CHIP8.isRunning && window.isRunning) {
+		//emulate a single step of CHIP-8
+		//CHIP8.step();
+		//draw if neccessary
 		window.run();
+		//catch user input
+		//CHIP8.catchKeys();
 	}
+
+	std::cout << "[EMULATOR]: Main loop was finished!" << std::endl;
 
 	window.terminate();
 	CHIP8.terminate();
