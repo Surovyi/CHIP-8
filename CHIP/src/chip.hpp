@@ -202,6 +202,110 @@ public:
 			pc += 2;
 			break;
 		}
+		case 0x8000:
+		{
+			int x = (opcode & 0x0F00) >> 8;
+			int y = (opcode & 0x00F0) >> 4;
+
+			switch (opcode & 0x000F) {
+			case 0: // Set Vx = Vy. (8xy0 - LD Vx, Vy)
+			{
+				V[x] = V[y];
+
+				std::cout << "[OPCODE 0x8000] V[x]: 0x" << V[x] << " | dec: " << std::dec << V[x] << std::endl;
+
+				break;
+			}
+			case 1: // Set Vx = Vx OR Vy. (8xy1 - OR Vx, Vy)
+			{
+				V[x] = V[x] | V[y];
+
+				std::cout << "[OPCODE 0x8001] V[x]: 0x" << V[x] << " | dec: " << std::dec << V[x] << std::endl;
+
+				break;
+			}
+			case 2: // Set Vx = Vx AND Vy. (8xy2 - AND Vx, Vy)
+			{
+				V[x] = V[x] & V[y];
+
+				std::cout << "[OPCODE 0x8002] V[x]: 0x" << V[x] << " | dec: " << std::dec << V[x] << std::endl;
+
+				break;
+			}
+			case 3: // Set Vx = Vx XOR Vy. (8xy3 - XOR Vx, Vy)
+			{
+				V[x] = V[x] ^ V[y];
+
+				std::cout << "[OPCODE 0x8003] V[x]: 0x" << V[x] << " | dec: " << std::dec << V[x] << std::endl;
+
+				break;
+			}
+			case 4: // Set Vx = Vx + Vy, set VF = carry. (8xy4 - ADD Vx, Vy)
+			{
+				V[x] = V[x] + V[y];
+				V[0xF] = V[x] > 0xFF;
+
+				std::cout << "[OPCODE 0x8004] V[x]: 0x" << V[x] << " | dec: " << std::dec << V[x] << std::endl;
+
+				break;
+			}
+			case 5: // Set Vx = Vx - Vy, set VF = NOT borrow. (8xy5 - SUB Vx, Vy)
+			{
+				V[0xF] = V[x] > V[y];
+				V[x] = V[x] - V[y];
+
+				std::cout << "[OPCODE 0x8005] V[x]: 0x" << V[x] << " | dec: " << std::dec << V[x] << std::endl;
+
+				break;
+			}
+			case 6: // Set Vx = Vx SHR 1. (8xy6 - SHR Vx {, Vy})
+			{
+				V[0xF] = V[x] & 0x1;
+				V[x] =V[x] / 2;
+
+				std::cout << "[OPCODE 0x8006] V[x]: 0x" << V[x] << " | dec: " << std::dec << V[x] << std::endl;
+
+				break;
+			}
+			case 7: // Set Vx = Vy - Vx, set VF = NOT borrow. (8xy7 - SUBN Vx, Vy)
+			{
+				V[0xF] = V[y] > V[x];
+				V[x] = V[y] - V[x];
+
+				std::cout << "[OPCODE 0x8007] V[x]: 0x" << V[x] << " | dec: " << std::dec << V[x] << std::endl;
+
+				break;
+			}
+			case 0xE: // Set Vx = Vx SHL 1. (8xyE - SHL Vx {, Vy})
+			{
+				V[0xF] = (V[x] >> 7) & 0x1;
+				V[x] = V[x] * 2;
+
+				std::cout << "[OPCODE 0x800E] V[x]: 0x" << V[x] << " | dec: " << std::dec << V[x] << std::endl;
+
+				break;
+			}
+			default:
+				std::cerr << "[OPCODE 0x8000]: Cannot find specified opcode: " << opcode << std::endl;
+				break;
+			}
+
+			pc += 2;
+		}
+		case 0x9000: //Skip next instruction if Vx != Vy. (9xy0 - SNE Vx, Vy)
+		{
+			int x = (opcode & 0x0F00) >> 8;
+			int y = (opcode & 0x00F0) >> 4;
+
+			if (V[x] != V[y]) {
+				pc += 2;
+			}
+
+			std::cout << "[OPCODE 0xA000] V[x]: 0x" << V[x] << " | V[y]: " << V[y] << std::endl;
+
+			pc += 2;
+			break;
+		}
 		case 0xA000: //The value of register I is set to nnn. (Annn - LD I, addr) ready
 		{
 			int nnn = (opcode & 0x0FFF);
