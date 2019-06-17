@@ -2,9 +2,13 @@
 
 #include <string>
 #include <iostream>
+#include <cstdlib>
+#include <algorithm>
 
 //can use memory starting from 0x200 location
 constexpr int MEMORY_SHIFT = 0x200;
+constexpr unsigned short DISPLAY_WIDTH = 64;
+constexpr unsigned short DISPLAY_HEIGHT = 32;
 
 class Chip
 {
@@ -21,6 +25,113 @@ public:
 		sp = 0;
 		pc = MEMORY_SHIFT;
 		isRunning = true;
+		loadFontIntoMemory();
+	}
+
+	void loadFontIntoMemory()
+	{
+#pragma region Font
+		unsigned char fonts[] = {
+			// "0"
+			0xF0,
+			0x90,
+			0x90,
+			0x90,
+			0xF0,
+			// "1"
+			0x20,
+			0x60,
+			0x20,
+			0x20,
+			0x70,
+			// "2"
+			0xF0,
+			0x10,
+			0xF0,
+			0x80,
+			0xF0,
+			// "3"
+			0xF0,
+			0x10,
+			0xF0,
+			0x10,
+			0xF0,
+			// "4"
+			0x90,
+			0x90,
+			0xF0,
+			0x10,
+			0x10,
+			// "5"
+			0xF0,
+			0x80,
+			0xF0,
+			0x10,
+			0xF0,
+			// "6"
+			0xF0,
+			0x80,
+			0xF0,
+			0x90,
+			0xF0,
+			// "7"
+			0xF0,
+			0x10,
+			0x20,
+			0x40,
+			0x40,
+			// "8"
+			0xF0,
+			0x90,
+			0xF0,
+			0x90,
+			0xF0,
+			// "9"
+			0xF0,
+			0x90,
+			0xF0,
+			0x10,
+			0xF0,
+			// "A"
+			0xF0,
+			0x90,
+			0xF0,
+			0x90,
+			0x90,
+			// "B"
+			0xE0,
+			0x90,
+			0xE0,
+			0x90,
+			0xE0,
+			// "C"
+			0xF0,
+			0x80,
+			0x80,
+			0x80,
+			0xF0,
+			// "D"
+			0xE0,
+			0x90,
+			0x90,
+			0x90,
+			0xE0,
+			// "E"
+			0xF0,
+			0x80,
+			0xF0,
+			0x80,
+			0xF0,
+			// "F"
+			0xF0,
+			0x80,
+			0xF0,
+			0x80,
+			0x80,
+		};
+#pragma endregion
+
+		std::copy(fonts, fonts + 16 * 5, memory);
 	}
 
 	//load game in binary format
@@ -32,6 +143,16 @@ public:
 			memory[MEMORY_SHIFT + i] = game[i];
 		}
 		int a = 0;
+	}
+
+	void keyPress(int k)
+	{
+		key[k] = 1;
+	}
+
+	void keyRelease(int k)
+	{
+		key[k] = 0;
 	}
 
 	void step()
@@ -116,6 +237,7 @@ public:
 			case 0x00E0: // Clear the display. (00E0 - CLS)
 			{
 				//Clear display
+				break;
 			}
 			case 0x00EE: // Return from a subroutine. (00EE - RET) ready
 			{
@@ -123,22 +245,27 @@ public:
 				sp--;
 
 				std::cout << "[OPCODE 0x00EE] pc: 0x" << pc << " | dec: " << std::dec << pc << " | sp: " << sp << std::endl;
+				break;
 			}
 			default:
 				std::cerr << "[OPCODE 0x0000]: Cannot find specified opcode: " << opcode << std::endl;
 				break;
 			}
+
+			break;
 		}
 		case 0x1000: // Jump to location nnn. (1nnn - JP addr) ready
 		{
 			pc = opcode & 0x0FFF;
 			std::cout << "[OPCODE 0x1000] pc: 0x" << pc << " | dec: " << std::dec << pc << std::endl;
+			break;
 		}
 		case 0x2000: // Call subroutine at nnn. (2nnn - CALL addr) ready
 		{
 			stack[sp] = pc;
 			pc = opcode & 0x0FFF;
 			sp++;
+			break;
 		}
 		case 0x3000: // Skip next instruction if Vx = kk. (3xkk - SE Vx, byte)
 		{
@@ -150,6 +277,8 @@ public:
 			} else {
 				pc += 2;
 			}
+
+			break;
 		}
 		case 0x4000: // Skip next instruction if Vx != kk. (4xkk - SNE Vx, byte)
 		{
@@ -163,6 +292,8 @@ public:
 			} else {
 				pc += 2;
 			}
+
+			break;
 		}
 		case 0x5000: // Skip next instruction if Vx = Vy. (5xy0 - SE Vx, Vy)
 		{
@@ -177,6 +308,8 @@ public:
 			} else {
 				pc += 2;
 			}
+
+			break;
 		}
 		case 0x6000: // Set Vx = kk. (6xkk - LD Vx, byte) ready
 		{
@@ -291,6 +424,7 @@ public:
 			}
 
 			pc += 2;
+			break;
 		}
 		case 0x9000: //Skip next instruction if Vx != Vy. (9xy0 - SNE Vx, Vy)
 		{
@@ -313,6 +447,62 @@ public:
 			std::cout << "[OPCODE 0xA000] nnn: 0x" << nnn << " | dec: " << std::dec << nnn << std::endl;
 
 			I = nnn;
+			pc += 2;
+			break;
+		}
+		case 0xB000: //Jump to location nnn + V0. (Bnnn - JP V0, addr)
+		{
+			int nnn = (opcode & 0x0FFF);
+
+			std::cout << "[OPCODE 0xB000] nnn: 0x" << nnn << " | dec: " << std::dec << nnn << std::endl;
+
+			pc = nnn + V[0];
+			break;
+		}
+		case 0xC000: //Set Vx = random byte AND kk. (Cxkk - RND Vx, byte)
+		{
+			int x = (opcode & 0x0F00) >> 8;
+			int kk = (opcode & 0x00FF);
+			int random = rand() % 256;
+
+			std::cout << "[OPCODE 0xC000] x: 0x" << x << " | kk: 0x" << kk << " | random: " << random << std::endl;
+
+			V[x] = random & kk;
+			pc += 2;
+			break;
+		}
+		case 0xD000: //Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision. (Dxyn - DRW Vx, Vy, nibble)
+		{
+			int x = (opcode & 0x0F00) >> 8;
+			int y = (opcode & 0x00F0) >> 4;
+			int n = (opcode & 0x000F);
+			
+			//char mem[n] = 
+
+
+			pc += 2;
+			break;
+		}
+		case 0xE000: //Set Vx = random byte AND kk. (Cxkk - RND Vx, byte)
+		{
+			int x = (opcode & 0x0F00) >> 8;
+			switch (opcode & 0x000F) {
+				case 0xE: // Skip next instruction if key with the value of Vx is pressed. (Ex9E - SKP Vx)
+				{
+					if (key[V[x]] != 0) {
+						pc += 2;
+					}
+					break;
+				}
+				case 0x1: // Skip next instruction if key with the value of Vx is not pressed. (ExA1 - SKNP Vx)
+				{
+					if (key[V[x]] == 0) {
+						pc += 2;
+					}
+					break;
+				}
+			}
+
 			pc += 2;
 			break;
 		}
@@ -354,7 +544,7 @@ private:
 	//program counter
 	unsigned short pc;
 	//graphics has a total of 64x32 pixels on a screen.
-	unsigned char gfx[64 * 32];
+	unsigned char gfx[DISPLAY_WIDTH * DISPLAY_HEIGHT];
 	//timer will count down to zero when set above. Used by events.
 	unsigned char delayTimer;
 	//same as previous. Used by sounds. Will beep while not a zero.
