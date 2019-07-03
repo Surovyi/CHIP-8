@@ -477,8 +477,18 @@ public:
 			int y = (opcode & 0x00F0) >> 4;
 			int n = (opcode & 0x000F);
 			
-			//char mem[n] = 
+			//read n-bytes memory
+			unsigned char* mem = new unsigned char[n];
+			for (int i = 0; i < n; i++) {
+				mem[i] = memory[I + i];
+			}
 
+			for (int vx = V[x]; vx < V[x] + 8; vx++) {
+
+			}
+
+			//XOR
+			V[x] = V[x] ^ V[y];
 
 			pc += 2;
 			break;
